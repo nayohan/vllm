@@ -86,7 +86,6 @@ def run_vllm(
     use_v2_block_manager: bool = False,
     download_dir: Optional[str] = None,
     load_format: str = EngineArgs.load_format,
-    disable_async_output_proc: bool = False,
 ) -> float:
     from vllm import LLM, SamplingParams
     llm = LLM(
@@ -111,7 +110,6 @@ def run_vllm(
         load_format=load_format,
         num_scheduler_steps=num_scheduler_steps,
         use_v2_block_manager=use_v2_block_manager,
-        disable_async_output_proc=disable_async_output_proc,
     )
 
     # Add the requests to the engine.
@@ -239,8 +237,7 @@ def main(args: argparse.Namespace):
             args.enable_prefix_caching, args.enable_chunked_prefill,
             args.max_num_batched_tokens, args.distributed_executor_backend,
             args.gpu_memory_utilization, args.num_scheduler_steps,
-            args.use_v2_block_manager, args.download_dir, args.load_format,
-            args.disable_async_output_proc)
+            args.use_v2_block_manager, args.download_dir, args.load_format)
     elif args.backend == "hf":
         assert args.tensor_parallel_size == 1
         elapsed_time = run_hf(requests, args.model, tokenizer, args.n,
@@ -265,7 +262,8 @@ def main(args: argparse.Namespace):
             "requests_per_second": len(requests) / elapsed_time,
             "tokens_per_second": total_num_tokens / elapsed_time,
         }
-        with open(args.output_json, "w") as f:
+        output_name = args.model.split('/')[-1]
+        with open(f'thoroughput_bench/{output_name}.json', "w") as f:
             json.dump(results, f, indent=4)
 
 
@@ -421,19 +419,15 @@ if __name__ == "__main__":
         'section for more information.\n'
         '* "bitsandbytes" will load the weights using bitsandbytes '
         'quantization.\n')
-    parser.add_argument(
-        "--disable-async-output-proc",
-        action='store_true',
-        default=False,
-        help="Disable async output processor for vLLM backend.")
     args = parser.parse_args()
+    print(args)
     if args.tokenizer is None:
         args.tokenizer = args.model
     if args.dataset is None:
         assert args.input_len is not None
         assert args.output_len is not None
-    else:
-        assert args.input_len is None
+    # else:
+    #     assert args.input_len is None
 
     if args.backend == "vllm":
         if args.hf_max_batch_size is not None:

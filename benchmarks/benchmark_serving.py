@@ -591,8 +591,8 @@ def main(args: argparse.Namespace):
             file_name = args.result_filename
         if args.result_dir:
             file_name = os.path.join(args.result_dir, file_name)
-        with open(file_name, "w") as outfile:
-            json.dump(result_json, outfile)
+        with open(file_name, "w", encoding='UTF-8-sig') as outfile:
+            json.dump(result_json, outfile, ensure_ascii=False)
 
 
 if __name__ == "__main__":
